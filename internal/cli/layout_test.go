@@ -35,6 +35,11 @@ func TestRepoLayout_requiredPathsExist(t *testing.T) {
 		"LICENSE",
 		"go.mod",
 		"Makefile",
+		".editorconfig",
+		".gitattributes",
+		".gitignore",
+		"docs/development/coding-standards.md",
+		"docs/development/definition-of-done.md",
 	} {
 		path := filepath.Join(root, filepath.FromSlash(rel))
 		if _, err := os.Stat(path); err != nil {

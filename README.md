@@ -26,7 +26,7 @@ storycode status
 
 - Story discovery is not implemented.
 - No local HTTP API or web UI yet.
-- The FastAPI fixture is a minimal chat route, not the full RAG demo.
+- The FastAPI fixture is static analysis input, not a live LLM or RAG service.
 
 ## License
 

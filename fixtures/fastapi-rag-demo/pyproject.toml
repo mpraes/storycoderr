@@ -1,0 +1,9 @@
+[project]
+name = "fastapi-rag-demo"
+version = "0.1.0"
+description = "Static FastAPI fixture for StoryCode analysis. StoryCode must not execute this project."
+requires-python = ">=3.11"
+dependencies = ["fastapi"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

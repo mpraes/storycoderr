@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"storycode/internal/config"
 )
 
 type denyWriteFilesystem struct {
@@ -146,7 +148,7 @@ func TestWriteConfig_writesWhenMissing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(body) != defaultConfigYAML {
+	if string(body) != config.DefaultYAML {
 		t.Fatalf("wrote %q", body)
 	}
 }

@@ -68,7 +68,7 @@ func TestRun_emptyCommandsExitZero(t *testing.T) {
 	commands := [][]string{
 		{"init", t.TempDir()},
 		{"status"},
-		{"index"},
+		{"index", t.TempDir()},
 		{"discover"},
 		{"serve"},
 		{"story", "list"},
@@ -111,7 +111,7 @@ func TestRun_emptyCommandsDoNotChangeFixture(t *testing.T) {
 
 	commands := [][]string{
 		{"status"},
-		{"index"},
+		{"index", t.TempDir()},
 		{"discover"},
 		{"serve"},
 		{"story", "list"},

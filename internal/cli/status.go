@@ -45,8 +45,21 @@ type statusReport struct {
 	Repository  string `json:"repository"`
 	IndexStatus string `json:"index_status"`
 	Stories     int    `json:"stories"`
+	Files       int    `json:"files"`
+	Symbols     int    `json:"symbols"`
+	Relations   int    `json:"relations"`
+	EntryPoints int    `json:"entry_points"`
 	Database    string `json:"database"`
 	Config      string `json:"config"`
+}
+
+type indexState struct {
+	Stories     int
+	Indexed     bool
+	Files       int
+	Symbols     int
+	Relations   int
+	EntryPoints int
 }
 
 func collectStatus(root string) (statusReport, error) {
@@ -56,42 +69,76 @@ func collectStatus(root string) (statusReport, error) {
 		Database:    filepath.ToSlash(filepath.Join(".storycode", "index", "storycode.db")),
 		Config:      filepath.ToSlash(filepath.Join(".storycode", "config.yaml")),
 	}
-	count, indexed, err := readIndexState(storage.DatabasePath(root))
+	state, err := readIndexState(storage.DatabasePath(root))
 	if err != nil {
 		return statusReport{}, err
 	}
-	report.Stories = count
-	if indexed {
+	report.Stories = state.Stories
+	report.Files = state.Files
+	report.Symbols = state.Symbols
+	report.Relations = state.Relations
+	report.EntryPoints = state.EntryPoints
+	if state.Indexed {
 		report.IndexStatus = "indexed"
 	}
 	return report, nil
 }
 
-func readIndexState(dbPath string) (int, bool, error) {
+func readIndexState(dbPath string) (indexState, error) {
 	if _, err := os.Stat(dbPath); err != nil {
 		if os.IsNotExist(err) {
-			return 0, false, nil
+			return indexState{}, nil
 		}
-		return 0, false, fmt.Errorf("cannot stat database %q: %w (expected a readable sqlite file)", dbPath, err)
+		return indexState{}, fmt.Errorf("cannot stat database %q: %w (expected a readable sqlite file)", dbPath, err)
 	}
 	return queryIndexState(dbPath)
 }
 
-func queryIndexState(dbPath string) (int, bool, error) {
+func queryIndexState(dbPath string) (indexState, error) {
 	db, err := storage.Open(dbPath)
 	if err != nil {
-		return 0, false, err
+		return indexState{}, err
 	}
 	defer db.Close()
-	count, err := countStories(db)
-	if err != nil {
-		return 0, false, err
+	return loadIndexState(db)
+}
+
+func loadIndexState(db *sql.DB) (indexState, error) {
+	var state indexState
+	var err error
+	if state.Stories, err = countStories(db); err != nil {
+		return indexState{}, err
 	}
-	indexed, err := hasCompletedIndex(db)
-	if err != nil {
-		return 0, false, err
+	if state.Indexed, err = hasCompletedIndex(db); err != nil {
+		return indexState{}, err
 	}
-	return count, indexed, nil
+	return fillGraphCounts(db, state)
+}
+
+func fillGraphCounts(db *sql.DB, state indexState) (indexState, error) {
+	var err error
+	if state.Files, err = countActive(db, "source_files"); err != nil {
+		return indexState{}, err
+	}
+	if state.Symbols, err = countActive(db, "code_symbols"); err != nil {
+		return indexState{}, err
+	}
+	if state.Relations, err = countActive(db, "code_relations"); err != nil {
+		return indexState{}, err
+	}
+	if state.EntryPoints, err = countActive(db, "entry_points"); err != nil {
+		return indexState{}, err
+	}
+	return state, nil
+}
+
+func countActive(db *sql.DB, table string) (int, error) {
+	var n int
+	q := `SELECT COUNT(*) FROM ` + table + ` WHERE deleted_at IS NULL`
+	if err := db.QueryRow(q).Scan(&n); err != nil {
+		return 0, fmt.Errorf("cannot count %s, expected table %s with deleted_at: %w", table, table, err)
+	}
+	return n, nil
 }
 
 func countStories(db *sql.DB) (int, error) {
@@ -136,6 +183,10 @@ func writeHumanStatus(out io.Writer, report statusReport) {
 	fmt.Fprintf(out, "Repository: %s\n", report.Repository)
 	fmt.Fprintf(out, "Index status: %s\n", humanIndexStatus(report.IndexStatus))
 	fmt.Fprintf(out, "Stories: %d\n", report.Stories)
+	fmt.Fprintf(out, "Files: %d\n", report.Files)
+	fmt.Fprintf(out, "Symbols: %d\n", report.Symbols)
+	fmt.Fprintf(out, "Relations: %d\n", report.Relations)
+	fmt.Fprintf(out, "Entry points: %d\n", report.EntryPoints)
 	fmt.Fprintf(out, "Database: %s\n", report.Database)
 	fmt.Fprintf(out, "Config: %s\n", report.Config)
 }

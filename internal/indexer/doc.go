@@ -1,2 +1,2 @@
-// Package indexer will walk a local repository and record parse results.
+// Package indexer walks a local repository and records parse results.
 package indexer

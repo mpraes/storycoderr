@@ -9,7 +9,7 @@ import (
 func addCommands(root *cobra.Command) {
 	root.AddCommand(initCommand())
 	root.AddCommand(statusCommand())
-	root.AddCommand(stubCommand("index", "Index the local repository"))
+	root.AddCommand(indexCommand())
 	root.AddCommand(stubCommand("discover", "Discover stories from indexed entry points"))
 	root.AddCommand(stubCommand("serve", "Serve the local StoryCode UI"))
 	root.AddCommand(storyCommand())

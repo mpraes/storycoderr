@@ -9,33 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"storycode/internal/config"
 	"storycode/internal/storage"
 )
-
-const defaultConfigYAML = `version: 1
-
-repository:
-  include:
-    - "**/*.py"
-    - "tests/**/*.py"
-    - "docs/**/*.md"
-  exclude:
-    - ".git/**"
-    - ".venv/**"
-    - "venv/**"
-    - "__pycache__/**"
-    - "node_modules/**"
-
-analysis:
-  languages:
-    - python
-  follow_symlinks: false
-  max_file_size_bytes: 5242880
-
-storage:
-  mode: repository
-  engine: sqlite
-`
 
 func initCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -152,7 +128,7 @@ func writeConfig(path string, force bool, files storycodeFS) (bool, error) {
 			return false, nil
 		}
 	}
-	if err := files.WriteFile(path, []byte(defaultConfigYAML), 0o644); err != nil {
+	if err := files.WriteFile(path, []byte(config.DefaultYAML), 0o644); err != nil {
 		return false, fmt.Errorf("cannot write config %q: %w (expected a writable file path)", path, err)
 	}
 	return true, nil
